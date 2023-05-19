@@ -1,0 +1,20 @@
+@startuml
+actor ":User" as User
+participant ":Browser" as Browser
+participant ":LoginService" as LoginService
+participant ":Database" as Database
+
+User -> Browser ++ : 1. Enter credentials
+User -> Browser: 2. Press login button
+Browser -> Browser: 3. Validate inputs
+Browser -> Browser: 4.1 [validation_errors] Show validation errors.
+Browser -> LoginService ++ : 4.2 login()
+LoginService -> Database ++ : 5. getUsersWithEmail()
+Database --> LoginService -- : 6. users
+LoginService --> Browser: 7.1 [len(users) == 0] error
+LoginService -> LoginService: 7.2 Verify email and password against hashed password from users[0](bcrypt)
+LoginService --> Browser: 8.1 [error verifying] error
+LoginService --> Browser -- : 8.2 jwt_login_token
+Browser -> Browser: 9.1 [error] Show error
+Browser -> Browser: 9.2 Show home page
+@enduml
