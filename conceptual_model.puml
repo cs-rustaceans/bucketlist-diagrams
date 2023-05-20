@@ -1,0 +1,44 @@
+@startuml
+enum VisibilityEnum{
+  public
+  private
+}
+enum RoleEnum {
+  admin
+  employee
+}
+
+struct User {
+  id: u64
+  role: RoleEnum
+  email: String
+  password: String
+}
+
+struct Session {
+  id: u64
+  createdAt: Date
+  expiresAt: Date
+}
+
+struct Destination {
+  id: u64
+  visibility: VisibilityEnum
+  isReviewed: bool
+  name: String
+  latitude: f64
+  longitude: f64
+}
+
+struct BucketListItem {
+  id: u64
+  startDate: Date
+  endDate: Date
+}
+
+User "1" -- "0..*" Session: has
+User "1" -- "0..*" Destination: owns
+Destination "1" -- "0..*" BucketListItem: is referenced
+User "1" -- "0..*" BucketListItem: has
+
+@enduml
