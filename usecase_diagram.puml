@@ -1,0 +1,71 @@
+/' 
+3 entities, User, Destination, BucketlistItem
+
+The admin manages users.(User management)
+  -> Update password.(generalizes update user usecase)
+  -> Add user.
+  -> Delete user.
+  -> Change user role.(generalizes update use usecase)
+  -> See users.
+  -> See user.
+
+The admin manages public destinations.
+  -> See public destinations.
+  -> See public destination.
+  -> Add destination.(automatically reviewed).
+  -> Update destination.
+  -> Delete destination.
+  -> Review destination.
+
+The user manages his own bucket list.
+  -> Add bucket list item from public list.
+  -> Add bucket list item from private list.(This also adds a public destination)
+  -> Delete bucket list item.
+  -> Update bucket list item.(Only the fields which are not in the underlying destination)
+  -> See own bucketlist.
+  -> Mark destination as favorite(only if it is reviewed).
+  -> Change password(required first time after admin reset - optional, let the user be stupid)
+
+The admin should have a way of getting the favorite bucketlist item for each user.
+  -> In case a user has not selected a favorite bucketlist item, a random one is selected.
+'/ 
+
+@startuml
+
+actor Admin
+actor Employee
+
+rectangle "Users" {
+  Admin -- (See users)
+  (See users) <.. (See user): <<extend>>
+  (See users) <.. (Add user): <<extend>>
+  (See user) <.. (Update user): <<extend>>
+  (Update user) <|-- (Change user password)
+  (Update user) <|-- (Change user role)
+  (See user) <.. (Delete user): <<extend>>
+  Employee --- (Change own password)
+}
+
+rectangle "Public destinations" {
+  Admin --- (See public destinations as admin)
+  (See public destinations as admin) <|-- (See unreviewed public destinations): <<extend>>
+  (See public destinations as admin) <.. (See public destination): <<extend>>
+  (See public destinations as admin) <.. (Add public destination): <<extend>>
+  (See public destination) <.. (Update public destination): <<extend>>
+  (See public destination) <.. (Delete public destination): <<extend>>
+  (See public destination) <.. (Review public destination): <<extend>>
+  Employee --- (See public destinations as employee)
+}
+
+rectangle "Bucketlist items" {
+    (See public destinations as employee) <.. (Add bucketlist item from public list): <<extend>>
+    Employee -- (See own bucketlist)
+    (See own bucketlist) <.. (Add bucketlist item with private list): <<extend>>
+    (See own bucketlist) <.. (See bucketlist item): <<extend>>
+    (See bucketlist item) <.. (Update bucketlist item): <<extend>>
+    (See bucketlist item) <.. (Delete bucketlist item): <<extend>>
+    (See own bucketlist) <.. (Mark bucketlist item as favorite): <<extend>>
+    Admin --- (Extract favorite bucketlist items)
+}
+
+@enduml
