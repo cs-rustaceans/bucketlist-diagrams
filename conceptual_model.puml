@@ -3,14 +3,22 @@ enum VisibilityEnum{
   public
   private
 }
+
 enum RoleEnum {
   admin
   employee
 }
 
+enum UserStatusEnum {
+  active
+  inactive
+  deleted
+}
+
 struct User {
   id: u64
   role: RoleEnum
+  status: UserStatusEnum
   email: String
   password: String
 }
