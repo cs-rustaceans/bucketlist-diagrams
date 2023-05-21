@@ -56,11 +56,11 @@ rectangle "Public destinations" {
   (See public destination) <.. (Update public destination): <<extend>>
   (See public destination) <.. (Delete public destination): <<extend>>
   (See public destination) <.. (Review public destination): <<extend>>
-  Employee --- (See public destinations as employee)
+  Employee --- (See available destinations as employee)
 }
 
 rectangle "Bucketlist items" {
-    (See public destinations as employee) <.. (Add bucketlist item from public list): <<extend>>
+    (See available destinations as employee) <.. (Add bucketlist item from public list): <<extend>>
     Employee -- (See own bucketlist)
     (See own bucketlist) <.. (Add bucketlist item with private list): <<extend>>
     (See own bucketlist) <.. (See bucketlist item): <<extend>>
