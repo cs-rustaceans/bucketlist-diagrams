@@ -66,6 +66,7 @@ rectangle "Bucketlist items" {
     (See own bucketlist) <.. (See bucketlist item): <<extend>>
     (See bucketlist item) <.. (Update bucketlist item): <<extend>>
     (See bucketlist item) <.. (Delete bucketlist item): <<extend>>
+    (See bucketlist item) <.. (Make bucketlist item destination public): <<extend>>
     (See own bucketlist) <.. (Mark bucketlist item as favorite): <<extend>>
     Admin --- (Extract favorite bucketlist items)
 }
