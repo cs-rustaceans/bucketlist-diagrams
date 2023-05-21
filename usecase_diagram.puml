@@ -48,7 +48,7 @@ rectangle "Users" {
 
 rectangle "Public destinations" {
   Admin --- (See public destinations as admin)
-  (See public destinations as admin) <|-- (See unreviewed public destinations): <<extend>>
+  (See public destinations as admin) <|-- (See unreviewed public destinations)
   (See public destinations as admin) <.. (See public destination): <<extend>>
   (See public destinations as admin) <.. (Add public destination): <<extend>>
   (See public destination) <.. (Update public destination): <<extend>>
