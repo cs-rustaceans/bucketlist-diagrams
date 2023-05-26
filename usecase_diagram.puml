@@ -40,9 +40,6 @@ rectangle "Users" {
   (See users) <.. (See user): <<extend>>
   (See users) <.. (Add user): <<extend>>
   (See user) <.. (Update user): <<extend>>
-  (Update user) <|--- (Change user password)
-  (Update user) <|--- (Change user role)
-  (Update user) <|--- (Change user status)
   (See user) <.. (Delete user): <<extend>>
   Employee --- (Change own password)
   Employee --- (Deactivate account)
