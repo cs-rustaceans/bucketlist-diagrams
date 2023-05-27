@@ -5,6 +5,9 @@ rectangle "dependencies" {
   interface "Eq"
   interface "PartialEq"
 
+  rectangle "jsonwebtoken" {
+  }
+
   rectangle "serde" {
     interface "Serialize"
     interface "Deserialize"
@@ -277,15 +280,20 @@ rectangle guard {
     employee_guard(ctx: &actix_web::guard::GuardContext): bool
   }
 
-  "User" --d- "admin"
-  "RoleEnum" --d- "admin"
-  "User" --d- "employee"
-  "RoleEnum" --d- "employee"
+  "User" -[#blue]d-- "admin"
+  "RoleEnum" --[#blue]d- "admin"
+  "User" --[#blue]d- "employee"
+  "RoleEnum" --[#blue]d- "employee"
 }
 
 rectangle middleware {
   metaclass "auth_middleware" {
     auth_middleware(req: actix_web::dev::ServiceRequest, credentials: actix_web_httpauth::extractors::bearer::BearerAuth): Result<ServieRequest, (actix_web::error::Error, ServiceRequest)>
   }
+
+  "Session" --[#red]- "auth_middleware"
+  "User" --[#red]- "auth_middleware"
+  "schema_users" --[#red]- "auth_middleware"
+  "schema_sessions" --[#red]- "auth_middleware"
 }
 @enduml
