@@ -5,4 +5,4 @@ This repository contains the plantuml files used to generate the diagrams for th
 ## Usage
 The specific `utils/plantuml.jar` should be used when generating diagrams.
 
-`java -jar utils/plantuml.jar *.puml -o target`
+`java -jar utils/plantuml.jar *.puml -o target -tsvg`

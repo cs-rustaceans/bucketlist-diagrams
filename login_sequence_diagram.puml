@@ -1,4 +1,5 @@
 @startuml
+skinparam backgroundColor #AAAAAA
 actor ":User" as User
 participant ":Browser" as Browser
 participant ":LoginService" as LoginService
