@@ -36,6 +36,10 @@ rectangle "dependencies" {
     struct "NaiveDateTime"
     struct "DateTime<Utc>"
   }
+  
+  rectangle "bcrypt" {
+
+  }
 
 }
 
@@ -102,9 +106,9 @@ rectangle "db" {
         end_date: NaiveDateTime
       }
 
-      "NaiveDateTime" ---- "BucketlistItem"
-      "NaiveDateTime" ---- "NewBucketlistItem"
-      "NaiveDateTime" ---- "UpdateBucketlistItem"
+      "NaiveDateTime" ---[#red]- "BucketlistItem"
+      "NaiveDateTime" ---[#red]- "NewBucketlistItem"
+      "NaiveDateTime" ---[#red]- "UpdateBucketlistItem"
     }
     rectangle "destination" {
       struct Destination {
@@ -154,8 +158,8 @@ rectangle "db" {
         end_date: NaiveDateTime
       }
       
-      "NaiveDateTime" ---- "Session"
-      "NaiveDateTime" ---- "NewSession"
+      "NaiveDateTime" ---[#blue]- "Session"
+      "NaiveDateTime" ---[#blue]- "NewSession"
     }
 
     rectangle "user" {
@@ -191,10 +195,10 @@ rectangle "db" {
         Employee
       }
     }
-    "FromRequest" <|-- User
+    "FromRequest" <|-[#green]- User
   }
   rectangle "predicates" {
-    metaclass "destination" {
+    metaclass "destination" as predicates_destinations {
       available_for_user(user_id: u64): Box<dyn BoxableExpression<destinations::table, Db, SqlType = Bool>> 
     }
   }
@@ -273,17 +277,17 @@ rectangle "dto" {
 }
 
 rectangle guard {
-  metaclass "admin" {
+  metaclass "admin" as admin_guard {
     admin_guard(ctx: &actix_web::guard::GuardContext): bool
   }
-  metaclass "employee" {
+  metaclass "employee" as employee_guard {
     employee_guard(ctx: &actix_web::guard::GuardContext): bool
   }
 
-  "User" -[#blue]d-- "admin"
-  "RoleEnum" --[#blue]d- "admin"
-  "User" --[#blue]d- "employee"
-  "RoleEnum" --[#blue]d- "employee"
+  "User" -[#yellow]d-- "admin"
+  "RoleEnum" --[#yellow]d- "admin"
+  "User" --[#yellow]d- "employee"
+  "RoleEnum" --[#yellow]d- "employee"
 }
 
 rectangle middleware {
@@ -291,9 +295,116 @@ rectangle middleware {
     auth_middleware(req: actix_web::dev::ServiceRequest, credentials: actix_web_httpauth::extractors::bearer::BearerAuth): Result<ServieRequest, (actix_web::error::Error, ServiceRequest)>
   }
 
-  "Session" --[#red]- "auth_middleware"
-  "User" --[#red]- "auth_middleware"
-  "schema_users" --[#red]- "auth_middleware"
-  "schema_sessions" --[#red]- "auth_middleware"
+  "Session" --[#purple]- "auth_middleware"
+  "User" --[#purple]- "auth_middleware"
+  "schema_users" --[#purple]- "auth_middleware"
+  "schema_sessions" --[#purple]- "auth_middleware"
+  "LoginClaims" --[#purple]- "auth_middleware"
 }
+
+rectangle "service" {
+  note "All services use the type DbPool defined in db module" as N7
+  rectangle "admin" {
+    metaclass "bucketlist_service" as admin_bucketlist_service {
+      admin_get_favorite_bucketlist_items(db_pool: actix_web::Data<DbPool>): Result<Vec<BucketlistItemWithDestinationDTO>, AppError>
+    }
+
+    "admin_bucketlist_service" ---[#red]u- schema_users
+    "admin_bucketlist_service" ---[#red]u- schema_bucketlist_items
+    "admin_bucketlist_service" ---[#red]u- schema_destinations
+    "admin_bucketlist_service" ---[#red]u- BucketlistItemWithDestinationDTO
+    "admin_bucketlist_service" ---[#red]u- AppError
+    
+    metaclass "destination_service" as admin_destination_service {
+      admin_get_all_destinations(db_pool: actix_web::Data<DbPool>): Result<Vec<Destination>, AppError>
+      admin_get_all_unreviewed_destinations(db_pool: actix_web::Data<DbPool>): Result<Vec<Destination>, AppError>
+      admin_get_destination_by_id(db_pool: actix_web::Data<DbPool>, id: u64): Result<Destination, AppError>
+      admin_create_destination(db_pool: actix_web::Data<DbPool>, destination: actix_web::Json<NewDestination>): Result<(), AppError>
+      admin_update_destination(db_pool: actix_web::Data<DbPool>, destination: actix_web::Json<UpdateDestination>): Result<(), AppError>
+      admin_delete_destination_by_id(db_pool: actix_web::Data<DbPool>, id: u64): Result<(), AppError>
+    }
+    
+    "admin_destination_service" ---[#blue]u- schema_users
+    "admin_destination_service" ---[#blue]u- schema_destinations
+    "admin_destination_service" ---[#blue]u- AppError
+    "admin_destination_service" ---[#blue]u- Destination
+    "admin_destination_service" ---[#blue]u- NewDestination
+    "admin_destination_service" ---[#blue]u- UpdateDestination
+    
+    metaclass "user_service" as admin_user_service {
+      admin_get_all_users(db_pool: actix_web::Data<DbPool>): Result<Vec<GetUserDTO>, AppError>
+      admin_get_user_by_id(db_pool: actix_web::Data<DbPool>, id: u64): Result<GetUserDTO, AppError>
+      admin_create_user(db_pool: actix_web::Data<DbPool>, user: actix_web::Json<NewUser>): Result<(), AppError>
+      admin_update_user(db_pool: actix_web::Data<DbPool>, user: actix_web::Json<UpdateUser>): Result<(), AppError>
+      admin_delete_user_by_id(db_pool: actix_web::Data<DbPool>, id: u64): Result<(), AppError>
+    }
+    
+    "admin_user_service" ---[#green]u- schema_users
+    "admin_user_service" ---[#green]u- AppError
+    "admin_user_service" ---[#green]u- User
+    "admin_user_service" ---[#green]u- NewUser
+    "admin_user_service" ---[#green]u- UpdateUser
+    "admin_user_service" ---[#green]u- GetUserDTO
+
+  }
+  
+  rectangle "employee" {
+    note "The user is provided through the authentification middleware " as N8
+    
+    metaclass "bucketlist_service" as employee_bucketlist_service {
+      employee_get_own_bucketlist(db_pool: actix_web::Data<DbPool>, user: User): Result<Vec<BucketlistItemWithDestinationDTO>, AppError>
+      employee_get_bucketlist_item_by_id(db_pool: actix_web::Data<DbPool>, user: User, id: u64): Result<BucketlistItemWithDestinationDTO, AppError>
+      employee_add_bucketlist_item_from_available_destinations(db_pool: actix_web::Data<DbPool>, user: User, new_bucketlist_item_json: actix_web::Json<NewBucketlistItem>): Result<(), AppError>
+      employee_add_bucketlist_item_wtih_private_list(db_pool: actix_web::Data<DbPool>, user: User, bucketlist_item_with_private_list_json: actix_web::Json<BucketlistItemWithPrivateListDTO>): Result<(), AppError>
+      employe_update_bucketlist_item(db_pool: actix_web::Data<DbPool>, user: User, id: u64, update_bucketlist_item_json: actix_web::Json<UpdateBucketlistItem>): Result<(), AppError>
+      employe_delete_bucketlist_item(db_pool: actix_web::Data<DbPool>, user: User, id: u64): Result<(), AppError>
+      employe_make_bucketlist_item_public(db_pool: actix_web::Data<DbPool>, user: User, id: u64): Result<(), AppError>
+      employe_make_bucketlist_item_private(db_pool: actix_web::Data<DbPool>, user: User, id: u64): Result<(), AppError>
+    }
+
+    "employee_bucketlist_service" ----[#red]u- schema_destinations
+    "employee_bucketlist_service" ----[#red]u- schema_bucketlist_items
+    "employee_bucketlist_service" ----[#red]u- AppError
+    "employee_bucketlist_service" ----[#red]u- NewBucketlistItem
+    "employee_bucketlist_service" ----[#red]u- UpdateBucketlistItem
+    "employee_bucketlist_service" ----[#red]u- BucketlistItemWithPrivateListDTO
+    "employee_bucketlist_service" ----[#red]u- predicates_destinations
+
+    metaclass "destination_service" as employee_destination_service {
+      employee_get_available_destinations(db_pool: actix_web::Data<DbPool>, user: User): Result<Vec<Destination>, AppError>
+    }
+
+    "employee_destination_service" ----[#blue]u- schema_users
+    "employee_destination_service" ----[#blue]u- schema_destinations
+    "employee_destination_service" ----[#blue]u- AppError
+    "employee_destination_service" ----[#blue]u- predicates_destinations
+
+    metaclass "user_service" as employee_user_service {
+      employe_change_password(db_pool: actix_web::Data<DbPool>, user: User, user_change_password_dto: actix_web::Json<UserChangePasswordDTO>): Result<(), AppError>
+      employe_make_account_inactive(db_pool: actix_web::Data<DbPool>, user: User): Result<(), AppError>
+    }
+    
+    "employee_user_service" ----[#green]u- schema_users
+    "employee_user_service" ----[#green]u- AppError
+    "employee_user_service" ----[#green]u- User
+    "employee_user_service" ----[#green]u- UserChangePasswordDTO
+  }
+
+  metaclass "login_service" {
+    login(db_pool: actix_web::Data<DbPool>, login: LoginForm): Result<Session, AppError>
+  }
+  "login_service" ----[#pink]u- User
+  "login_service" ----[#pink]u- Session
+  "login_service" ----[#pink]u- schema_users
+  "login_service" ----[#pink]u- schema_sessions
+}
+
+rectangle "routes" {
+  note "All routes have a corresponding method in services. They all return Result<actix_web::HttpResponse, AppError>" as N9
+}
+
+"routes" -----u[#pink]- admin_guard
+"routes" -----u[#pink]- employee_guard
+"routes" -----u[#pink]- auth_middleware
+
 @enduml
