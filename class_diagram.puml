@@ -299,7 +299,7 @@ rectangle middleware {
   "User" --[#purple]- "auth_middleware"
   "schema_users" --[#purple]- "auth_middleware"
   "schema_sessions" --[#purple]- "auth_middleware"
-  "LoginClaims" --[#purple]- "auth_middleware"
+  "LoginTokenClaims" --[#purple]- "auth_middleware"
 }
 
 rectangle "service" {
